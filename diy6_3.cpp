@@ -1,49 +1,62 @@
 #include <iostream>
-#include <numeric> // for std::gcd
+#include <stdexcept> // for std::out_of_range
 
-class Fraction {
+class SafeArray {
 private:
-    long num;
-    long den;
-
-    void simplify() {
-        if (den == 0) {
-            std::cerr << "Error: Denominator cannot be zero. Setting to 1.\n";
-            den = 1;
-            num = 0;
-            return;
-        }
-        // Find greatest common divisor
-        long common = std::gcd(num, den);
-        num /= common;
-        den /= common;
-
-        // Ensure denominator is always positive
-        if (den < 0) {
-            num = -num;
-            den = -den;
-        }
-    }
+    int* data;
+    size_t size;
 
 public:
-    Fraction(long n = 0, long d = 1) : num(n), den(d) {
-        simplify();
+    // Constructor
+    explicit SafeArray(size_t s) : size(s) {
+        data = new int[size]{}; // Initialize with zeros
     }
 
-    // Overload stream insertion (<<)
-    friend std::ostream& operator<<(std::ostream& out, const Fraction& f) {
-        out << f.num;
-        if (f.den != 1) {
-            out << "/" << f.den;
+    // Destructor
+    ~SafeArray() {
+        delete[] data;
+    }
+
+    // Copy Constructor (Rule of Three)
+    SafeArray(const SafeArray& other) : size(other.size) {
+        data = new int[size];
+        for (size_t i = 0; i < size; ++i) {
+            data[i] = other.data[i];
         }
-        return out;
     }
 
-    // Overload stream extraction (>>)
-    friend std::istream& operator>>(std::istream& in, Fraction& f) {
-        char slash;
-        in >> f.num >> slash >> f.den;
-        f.simplify();
-        return in;
+    // Copy Assignment Operator
+    SafeArray& operator=(const SafeArray& other) {
+        if (this == &other) return *this;
+        
+        int* newData = new int[other.size];
+        for (size_t i = 0; i < other.size; ++i) {
+            newData[i] = other.data[i];
+        }
+
+        delete[] data;
+        data = newData;
+        size = other.size;
+        return *this;
+    }
+
+    // Overload operator[] for non-const objects (allows writing)
+    int& operator[](size_t index) {
+        if (index >= size) {
+            throw std::out_of_range("SafeArray error: Index out of range!");
+        }
+        return data[index];
+    }
+
+    // Overload operator[] for const objects (read-only)
+    const int& operator[](size_t index) const {
+        if (index >= size) {
+            throw std::out_of_range("SafeArray error: Index out of range!");
+        }
+        return data[index];
+    }
+
+    size_t getSize() const {
+        return size;
     }
 };
